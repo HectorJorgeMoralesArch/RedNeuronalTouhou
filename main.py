@@ -38,3 +38,8 @@ def JSON2SCV(data):
             writer.writerow([directory, hash, height, id, image, change, owner, parent_id, rating, sample, sample_height, sample_width, score, tag, width])
     # Cerrar el archivo
     f.close()
+def descargar():
+    # Definir los parámetros de búsqueda
+    tags = 'Touhou'  # las etiquetas para buscar
+    limit = 100
+    pages = 100
