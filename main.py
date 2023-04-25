@@ -15,4 +15,20 @@ def JSON2SCV(data):
             writer.writerow(['directory', 'hash', 'height', 'id', 'image', 'change', 'owner', 'parent_id', 'rating', 'sample', 'sample_height', 'sample_width', 'score', 'tags', 'width'])
     with open(filename, 'a', newline='') as f:
         writer = scv.writer(f)
-        
+        for item in data:
+            # Obtener los valores de cada campo
+            directory = item['directory']
+            hash = item['hash']
+            height = item['height']
+            id = item['id']
+            image = item['image']
+            change = item['change']
+            owner = item['owner']
+            parent_id = item['parent_id']
+            rating = item['rating']
+            sample = item['sample']
+            sample_height = item['sample_height']
+            sample_width = item['sample_width']
+            score = item['score']
+            tag = item['tags']
+            width = item['width']
