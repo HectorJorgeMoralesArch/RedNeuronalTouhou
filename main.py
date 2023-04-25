@@ -32,3 +32,9 @@ def JSON2SCV(data):
             score = item['score']
             tag = item['tags']
             width = item['width']
+            #print(directory, "\n", hash, "\n", height, "\n", id, "\n", image, "\n", change, "\n", owner, "\n", parent_id, "\n", rating, "\n", sample, "\n", sample_height, "\n", sample_width, "\n", score, "\n", tag, "\n", width, "\n")
+            tag = tag.replace(' ', ', ')
+            # Escribir la fila en el archivo CSV
+            writer.writerow([directory, hash, height, id, image, change, owner, parent_id, rating, sample, sample_height, sample_width, score, tag, width])
+    # Cerrar el archivo
+    f.close()
