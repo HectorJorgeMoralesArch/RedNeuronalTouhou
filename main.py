@@ -13,4 +13,6 @@ def JSON2SCV(data):
             writer = csv.writer(f)
             # Escribir los encabezados
             writer.writerow(['directory', 'hash', 'height', 'id', 'image', 'change', 'owner', 'parent_id', 'rating', 'sample', 'sample_height', 'sample_width', 'score', 'tags', 'width'])
-    
+    with open(filename, 'a', newline='') as f:
+        writer = scv.writer(f)
+        
