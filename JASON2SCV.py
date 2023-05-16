@@ -1,4 +1,3 @@
-
 def JSON2SCV(data):
     # Definir la ruta y nombre de archivo
     filename = 'archivo.csv'
