@@ -17,3 +17,9 @@ characters = {
     'Houraisan Kaguya': 'houraisan_kaguya',
     'Rumia': 'rumia'
 }
+
+# Descargar las imágenes y generar los archivos CSV para cada personaje
+for character, tag in characters.items():
+    print(f'Downloading images of {character}...')
+    download_images(tag, 5000, character)
+    print()
