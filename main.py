@@ -21,7 +21,35 @@ def download_images(tag, count, character_name):
         'json': 1
     }
 
-    
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = json.loads(response.text)
+        directory = f'{character_name}_images'
+        os.makedirs(directory, exist_ok=True)
+
+        with open(f'{character_name}.json', 'w') as file:
+            json.dump(data, file)
+
+        csv_data = []
+        for i, item in enumerate(data, 1):
+            image_url = item['file_url']
+            image_name = item['image']
+            artist = item['artist']
+            tags = ', '.join(tag for tag in item['tags'].split() if tag not in [character_name, artist])
+            download_image(image_url, directory, image_name)
+            csv_data.append([character_name, image_name, artist, tags])
+
+            progress = i / count * 100
+            print(f'Progress: {progress:.2f}% ({i}/{count})', end='\r')
+
+        with open(f'{character_name}.csv', 'w', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(['Character', 'Image Name', 'Artist', 'Tags'])
+            writer.writerows(csv_data)
+
+        print(f'\n{count} images of {character_name} downloaded and CSV file generated.')
+    else:
+        print(f'Error downloading images of {character_name}.')
 
 # Lista de personajes y sus respectivas etiquetas
 characters = {
