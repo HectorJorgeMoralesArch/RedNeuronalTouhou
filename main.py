@@ -3,6 +3,13 @@ import os
 import json
 import csv
 
+def download_image(url, directory, filename):
+    response = requests.get(url)
+    if response.status_code == 200:
+        filepath = os.path.join(directory, filename)
+        with open(filepath, 'wb') as file:
+            file.write(response.content)
+
 
 # Lista de personajes y sus respectivas etiquetas
 characters = {
