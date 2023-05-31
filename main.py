@@ -10,6 +10,18 @@ def download_image(url, directory, filename):
         with open(filepath, 'wb') as file:
             file.write(response.content)
 
+def download_images(tag, count, character_name):
+    url = 'https://safebooru.org/index.php'
+    params = {
+        'page': 'dapi',
+        's': 'post',
+        'q': 'index',
+        'limit': count,
+        'tags': f'{tag} -{character_name}',
+        'json': 1
+    }
+
+    
 
 # Lista de personajes y sus respectivas etiquetas
 characters = {
