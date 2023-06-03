@@ -8,7 +8,7 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix, classification_report
 
-def JSON2SCV(data, character):
+def JSON2SCV(data, Character, folder):
     # Definir la ruta y nombre de archivo
     filename = 'archivo.csv'
     # Comprobar si el archivo CSV ya existe
@@ -16,7 +16,8 @@ def JSON2SCV(data, character):
         with open(filename, 'w', newline='') as f:
             writer = csv.writer(f)
             # Escribir los encabezados
-            writer.writerow(['directory', 'hash', 'height', 'id', 'image', 'change', 'owner', 'parent_id', 'rating', 'sample', 'sample_height', 'sample_width', 'score', 'tags', 'width', 'character'])
+            writer.writerow(['directory', 'hash', 'height', 'id', 'image', 'change', 'owner', 'parent_id', 'rating', 'sample', 'sample_height', 'sample_width', 'score', 'tags', 'width', 'character', 'Path'])
+    Path=folder+"/"+Character
     with open(filename, 'a', newline='') as f:
         writer = csv.writer(f)
         for item in data:
@@ -36,6 +37,8 @@ def JSON2SCV(data, character):
             score = item['score']
             tags = item['tags']
             width = item['width']
+            character = Character
+            path = Path
             
             # Reemplazar los espacios en blanco en la cadena de tags con comas
             tags = tags.replace(' ', ', ')
@@ -44,7 +47,7 @@ def JSON2SCV(data, character):
     # Cerrar el archivo
     f.close()
 
-def descargar(url, images, character):
+def descargar(url, images, character, folder):
     # Definir los parámetros de búsqueda
     limit = 100    # el número máximo de resultados por página
     pages = (images // limit) + 1    # calcular el número total de páginas a descargar
@@ -84,72 +87,8 @@ def descargar(url, images, character):
             print(f'URL: {image_url}\n')
             
             # Agregar los datos al archivo CSV
-            JSON2SCV(data, character)
+            JSON2SCV(data, character, folder)
 
-def download_images(url, count, character_name):
-    params = {
-        'page': 'dapi',
-        's': 'post',
-        'q': 'index',
-        'limit': count,
-        'json': 1
-    }
-
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        try:
-            data = json.loads(response.text)
-            directory = f'{character_name}_images'
-            os.makedirs(directory, exist_ok=True)
-
-            with open(f'{character_name}.json', 'w') as file:
-                json.dump(data, file)
-
-            csv_data = []
-            for i, item in enumerate(data, 1):
-                image_url = item['file_url']
-                image_name = item['image']
-                artist = item['artist']
-                tags = ', '.join(tag for tag in item['tags'].split() if tag not in [character_name, artist])
-                download_image(image_url, directory, image_name)
-                csv_data.append([character_name, image_name, artist, tags])
-
-                progress = i / count * 100
-                print(f'Progress: {progress:.2f}% ({i}/{count})', end='\r')
-
-            with open(f'{character_name}.csv', 'w', newline='', encoding='utf-8') as file:
-                writer = csv.writer(file)
-                writer.writerow(['Character', 'Image Name', 'Artist', 'Tags'])
-                writer.writerows(csv_data)
-
-            print(f'\n{count} images of {character_name} downloaded and CSV file generated.')
-
-            # Agregar los datos al archivo CSV general
-            filename = 'archivo.csv'
-            with open(filename, 'a', newline='') as f:
-                writer = csv.writer(f)
-                for item in data:
-                    directory = item['directory']
-                    hash_value = item['hash']
-                    height = item['height']
-                    image_id = item['id']
-                    image_name = item['image']
-                    change = item['change']
-                    owner = item['owner']
-                    parent_id = item['parent_id']
-                    rating = item['rating']
-                    sample = item['sample']
-                    sample_height = item['sample_height']
-                    sample_width = item['sample_width']
-                    score = item['score']
-                    tags = ', '.join(tag for tag in item['tags'].split() if tag not in [character_name, artist])
-                    width = item['width']
-                    writer.writerow([directory, hash_value, height, image_id, image_name, change, owner, parent_id, rating, sample, sample_height, sample_width, score, tags, width])
-
-        except JSONDecodeError:
-            print(f'Error decoding JSON response for {character_name}.')
-    else:
-        print(f'Error downloading images of {character_name}.')
 
 def RedNeuronal(character_folder):
     # Definir la ruta de la carpeta de imágenes
@@ -291,10 +230,10 @@ def main():
         print(f'Downloading images of {character}...')
         character_folder = character.lower().replace(' ', '_')
         os.makedirs(character_folder, exist_ok=True)
-        descargar(url, image_count, character_folder)
+        descargar(url, image_count, character, character_folder)
 
     # Entrenar y guardar modelos de red neuronal para cada personaje
-    for character in characters:
+    for character, in characters:
         character_folder = character.lower().replace(' ', '_')
         model = RedNeuronal(character_folder)
         model.save(f'{character_folder}_model.h5')
