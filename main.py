@@ -238,11 +238,11 @@ def main():
     }
 
     # Crear una carpeta para cada personaje y descargar las imágenes
-    for character, url in characters:
+    for character in characters:
         print(f'Downloading images of {character}...')
         character_folder = character.lower().replace(' ', '_')
         os.makedirs(character_folder, exist_ok=True)
-        descargar(url, image_count, character, character_folder)
+        descargar(characters[character], image_count, character, character_folder)
 
     RedNeuronal("archivo.csv")
 
