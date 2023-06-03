@@ -38,18 +38,18 @@ def JSON2SCV(data, Character, folder):
     # Cerrar el archivo
     f.close()
 
-def descargar(url, images, character, folder):
+def descargar(url, character, folder):
     # Definir los parámetros de búsqueda
     limit = 100    # el número máximo de resultados por página
-    pages = (images // limit) + 1    # calcular el número total de páginas a descargar
+    pages = 50    # calcular el número total de páginas a descargar
     
     # Inicializar el contador de imagen
     image_count = 1
     
     # Iterar a través de las páginas y descargar las imágenes
-    for page in range(1, pages + 1):
+    while(image_count<5000):
         # Realizar la solicitud a la API de Safebooru para la página actual
-        response = requests.get(f'{url}&limit={limit}&pid={page}&json=1')
+        response = requests.get(f'{url}&limit={limit}&pid={pages}&json=1')
         
         # Analizar la respuesta JSON
         data = json.loads(response.content)
@@ -64,24 +64,28 @@ def descargar(url, images, character, folder):
                 continue
             
             # Guardar la respuesta JSON en un archivo
-            with open(f'safebooru_{image_count}.json', 'w') as f:
-                json.dump(item, f)
+            #with open(f'safebooru_{image_count}.json', 'w') as f:
+            #    json.dump(item, f)
             
             # Obtener la información de la imagen
-            id = item['id']
+            id=item['id']
             image_url = f'https://safebooru.org//images/{item["directory"]}/{item["image"]}?{item["id"]}'
-            
+            #owner = item['owner'] # el nombre del artista
+            #tagsP = item['tags']# las etiquetas de la imagen
             # Descargar la imagen
             response = requests.get(image_url, stream=True)
-            with open(f'{character}/{item["image"]}', 'wb') as f:
+            with open(f'{item["image"]}', 'wb') as f:
                 response.raw.decode_content = True
                 shutil.copyfileobj(response.raw, f)
-            
-            # Incrementar el contador de imagen
+            # Imprimir la información de la imagen
+            print(f'Character \t{character}\nImagen \t{image_count}')
+            #print(f'Artista: {owner}')
+            #print(f'Etiquetas: {tagsP}')
+            #print(f'URL: {image_url}\n')
             image_count += 1
             
             # Imprimir la información de la imagen
-            print(f'Imagen {image_count}:')
+            print(f'Character {character} Imagen {image_count}:')
             #print(f'URL: {image_url}\n')
             
             # Agregar los datos al archivo CSV
@@ -230,8 +234,6 @@ def descargar_wrapper(url, images, character, folder):
     descargar(url, images, character, folder)
 
 def main():
-    # Definir el número de imágenes a descargar para cada personaje
-    image_count = 5000
 
     # Definir la lista de personajes
     # Lista de personajes y sus respectivos enlaces
@@ -251,9 +253,9 @@ def main():
     # Crear una carpeta para cada personaje y descargar las imágenes
     for character, url in characters.items():
         print(f'Downloading images of {character}...')
-        character_folder = character.lower().replace(' ', '_')
+        character_folder = character.replace(' ', '_')
         os.makedirs(character_folder, exist_ok=True)
-        descargar(url, image_count, character, character_folder)
+        descargar(url, character, character_folder)
     model = RedNeuronal("archivo.csv")
     model.save(f'Touhou_model.h5')
     
