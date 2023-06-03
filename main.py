@@ -73,10 +73,21 @@ def descargar(url, character, folder):
             #owner = item['owner'] # el nombre del artista
             #tagsP = item['tags']# las etiquetas de la imagen
             # Descargar la imagen
-            response = requests.get(image_url, stream=True)
-            with open(f'{folder}_{image_count}', 'wb') as f:
-                response.raw.decode_content = True
-                shutil.copyfileobj(response.raw, f)
+            try:
+                response = requests.get(image_url, stream=True)
+                response.raise_for_status()  # Verificar si hubo errores en la respuesta HTTP
+                with open(f'{folder}_{image_count}', 'wb') as f:
+                    response.raw.decode_content = True
+                    shutil.copyfileobj(response.raw, f)
+            except requests.exceptions.RequestException as e:
+                print(f"Error al realizar la solicitud: {e}")
+                continue
+            except IOError as e:
+                print(f"Error al guardar la imagen: {e}")
+                continue
+            except Exception as e:
+                print(f"Ocurrió un error inesperado: {e}")
+                continue
             # Imprimir la información de la imagen
             #print(f'Artista: {owner}')
             #print(f'Etiquetas: {tagsP}')
