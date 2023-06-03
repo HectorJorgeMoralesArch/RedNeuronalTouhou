@@ -16,34 +16,24 @@ def JSON2SCV(data, Character, folder):
         with open(filename, 'w', newline='') as f:
             writer = csv.writer(f)
             # Escribir los encabezados
-            writer.writerow(['directory', 'hash', 'height', 'id', 'image', 'change', 'owner', 'parent_id', 'rating', 'sample', 'sample_height', 'sample_width', 'score', 'tags', 'width', 'character', 'Path'])
+            writer.writerow(['id', 'image', 'tags', 'width', 'height', 'character', 'Path'])
     Path=folder+"/"+Character
     with open(filename, 'a', newline='') as f:
         writer = csv.writer(f)
         for item in data:
             # Obtener los valores de cada campo
-            directory = item['directory']
-            hash_value = item['hash']
-            height = item['height']
             id = item['id']
             image = item['image']
-            change = item['change']
-            owner = item['owner']
-            parent_id = item['parent_id']
-            rating = item['rating']
-            sample = item['sample']
-            sample_height = item['sample_height']
-            sample_width = item['sample_width']
-            score = item['score']
             tags = item['tags']
             width = item['width']
+            height = item['height']
             character = Character
             path = Path
             
             # Reemplazar los espacios en blanco en la cadena de tags con comas
             tags = tags.replace(' ', ', ')
             # Escribir la fila en el archivo CSV
-            writer.writerow([directory, hash_value, height, id, image, change, owner, parent_id, rating, sample, sample_height, sample_width, score, tags, width, character])
+            writer.writerow([id, image, tags, width, height, character, path])
     # Cerrar el archivo
     f.close()
 
@@ -90,29 +80,29 @@ def descargar(url, images, character, folder):
             JSON2SCV(data, character, folder)
 
 
-def RedNeuronal(character_folder):
-    # Definir la ruta de la carpeta de imágenes
-    image_folder = character_folder
+def RedNeuronal(csv_file):
+    # Cargar el archivo CSV
+    df = pd.read_csv(csv_file)
+    image_paths = df['image_path'].tolist()
 
     # Dividir el conjunto de datos en entrenamiento, prueba y validación
     train_ratio = 0.6
     validation_ratio = 0.2
     test_ratio = 0.2
 
-    # Obtener la lista de nombres de archivo de imágenes en la carpeta
-    image_files = os.listdir(image_folder)
-    random.shuffle(image_files)
+    # Obtener la lista de rutas de imágenes
+    random.shuffle(image_paths)
 
     # Calcular la cantidad de imágenes para cada conjunto
-    total_images = len(image_files)
+    total_images = len(image_paths)
     num_train = int(total_images * train_ratio)
     num_validation = int(total_images * validation_ratio)
     num_test = total_images - num_train - num_validation
 
-    # Dividir los nombres de archivo de imágenes en conjuntos de entrenamiento, prueba y validación
-    train_files = image_files[:num_train]
-    validation_files = image_files[num_train:num_train + num_validation]
-    test_files = image_files[num_train + num_validation:]
+    # Dividir las rutas de imágenes en conjuntos de entrenamiento, prueba y validación
+    train_paths = image_paths[:num_train]
+    validation_paths = image_paths[num_train:num_train + num_validation]
+    test_paths = image_paths[num_train + num_validation:]
 
     # Definir el generador de datos para el conjunto de entrenamiento
     train_datagen = ImageDataGenerator(rescale=1.0/255.0)
@@ -120,13 +110,12 @@ def RedNeuronal(character_folder):
     # Cargar y preparar las imágenes de entrenamiento
     train_images = []
     train_labels = []
-    for filename in train_files:
-        image_path = os.path.join(image_folder, filename)
+    for image_path in train_paths:
         image = tf.keras.preprocessing.image.load_img(image_path, target_size=(224, 224))
         image = tf.keras.preprocessing.image.img_to_array(image)
         image = train_datagen.random_transform(image)
         train_images.append(image)
-        train_labels.append(character_folder)
+        train_labels.append(os.path.dirname(image_path))
 
     # Convertir las listas de imágenes y etiquetas en matrices NumPy
     train_images = np.array(train_images)
@@ -138,13 +127,12 @@ def RedNeuronal(character_folder):
     # Cargar y preparar las imágenes de prueba
     test_images = []
     test_labels = []
-    for filename in test_files:
-        image_path = os.path.join(image_folder, filename)
+    for image_path in test_paths:
         image = tf.keras.preprocessing.image.load_img(image_path, target_size=(224, 224))
         image = tf.keras.preprocessing.image.img_to_array(image)
         image = test_datagen.random_transform(image)
         test_images.append(image)
-        test_labels.append(character_folder)
+        test_labels.append(os.path.dirname(image_path))
 
     # Convertir las listas de imágenes y etiquetas en matrices NumPy
     test_images = np.array(test_images)
@@ -156,13 +144,12 @@ def RedNeuronal(character_folder):
     # Cargar y preparar las imágenes de validación
     validation_images = []
     validation_labels = []
-    for filename in validation_files:
-        image_path = os.path.join(image_folder, filename)
+    for image_path in validation_paths:
         image = tf.keras.preprocessing.image.load_img(image_path, target_size=(224, 224))
         image = tf.keras.preprocessing.image.img_to_array(image)
         image = validation_datagen.random_transform(image)
         validation_images.append(image)
-        validation_labels.append(character_folder)
+        validation_labels.append(os.path.dirname(image_path))
 
     # Convertir las listas de imágenes y etiquetas en matrices NumPy
     validation_images = np.array(validation_images)
@@ -186,7 +173,7 @@ def RedNeuronal(character_folder):
     predictions = model.predict(test_images)
 
     # Obtener las etiquetas predichas
-    predicted_labels = [character_folder if prediction >= 0.5 else 'Not ' + character_folder for prediction in predictions]
+    predicted_labels = [os.path.dirname(image_path) if prediction >= 0.5 else 'Not ' + os.path.dirname(image_path) for prediction, image_path in zip(predictions, test_paths)]
 
     # Crear una matriz de confusión
     cm = confusion_matrix(test_labels, predicted_labels)
@@ -200,7 +187,7 @@ def RedNeuronal(character_folder):
     print(classification_report(test_labels, predicted_labels))
 
     # Guardar el modelo entrenado
-    model.save(f'{character_folder}_model.h5')
+    model.save(f'model.h5')
 
     # Retornar el modelo entrenado
     return model
@@ -257,7 +244,7 @@ def main():
         os.makedirs(character_folder, exist_ok=True)
         descargar(url, image_count, character, character_folder)
 
-    randomize_csv() 
+    RedNeuronal("archivo.csv")
 
 if __name__ == '__main__':
     main()
