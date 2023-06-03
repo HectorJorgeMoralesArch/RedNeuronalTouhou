@@ -205,6 +205,31 @@ def RedNeuronal(character_folder):
     # Retornar el modelo entrenado
     return model
 
+
+def randomize_csv():
+    # Definir la ruta y nombre de archivo
+    filename = 'archivo.csv'
+    randomfilename = 'random.csv'
+    # Comprobar si el archivo CSV ya existe
+    if not os.path.isfile(randomfilename):
+        with open(randomfilename, 'w', newline='') as f:
+            writer = csv.writer(f)
+            # Escribir los encabezados
+            writer.writerow(['Path'])
+    Path=folder+"/"+Character
+    # Leer el archivo CSV de entrada
+    with open(filename, 'r') as file:
+        reader = csv.reader(file["Path"])
+        data = list(reader)
+    # Randomizar los datos
+    random.shuffle(data)
+    # Escribir los datos randomizados en el archivo CSV de salida
+    with open(randomfilename, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(data)
+    print("Archivo randomizado generado con éxito.")
+
+
 def main():
 
     # Definir el número de imágenes a descargar para cada personaje
@@ -232,11 +257,7 @@ def main():
         os.makedirs(character_folder, exist_ok=True)
         descargar(url, image_count, character, character_folder)
 
-    # Entrenar y guardar modelos de red neuronal para cada personaje
-    for character, in characters:
-        character_folder = character.lower().replace(' ', '_')
-        model = RedNeuronal(character_folder)
-        model.save(f'{character_folder}_model.h5')
+    randomize_csv()
 
 if __name__ == '__main__':
     main()
