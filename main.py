@@ -74,20 +74,17 @@ def descargar(url, character, folder):
             #tagsP = item['tags']# las etiquetas de la imagen
             # Descargar la imagen
             response = requests.get(image_url, stream=True)
-            with open(f'{folder}/{item["image"]}', 'wb') as f:
+            with open(f'{folder}_{image_count}', 'wb') as f:
                 response.raw.decode_content = True
                 shutil.copyfileobj(response.raw, f)
             # Imprimir la información de la imagen
-            print(f'Character \t{character}\nImagen \t{image_count}')
             #print(f'Artista: {owner}')
             #print(f'Etiquetas: {tagsP}')
             #print(f'URL: {image_url}\n')
-            image_count += 1
-            
             # Imprimir la información de la imagen
-            print(f'Character {character} Imagen {image_count}:')
+            print(f'Character\t{character}\t\t\t\tImagen\t{image_count}:')
             #print(f'URL: {image_url}\n')
-            
+            image_count += 1
             # Agregar los datos al archivo CSV
             JSON2SCV(data, character, folder)
 
