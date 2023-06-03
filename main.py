@@ -9,7 +9,7 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix, classification_report
 
-def JSON2SCV(data, Character, folder):
+def JSON2SCV(data, Character):
     # Definir la ruta y nombre de archivo
     filename = 'archivo.csv'
     # Comprobar si el archivo CSV ya existe
@@ -17,7 +17,7 @@ def JSON2SCV(data, Character, folder):
         with open(filename, 'w', newline='') as f:
             writer = csv.writer(f)
             # Escribir los encabezados
-            writer.writerow(['id', 'image', 'tags', 'width', 'height', 'character', 'path'])
+            writer.writerow(['id', 'image', 'tags', 'width', 'height', 'character'])
     
     with open(filename, 'a', newline='') as f:
         writer = csv.writer(f)
@@ -29,16 +29,15 @@ def JSON2SCV(data, Character, folder):
             width = item['width']
             height = item['height']
             character = Character
-            path = folder + "/"+image
             
             # Reemplazar los espacios en blanco en la cadena de tags con comas
             tags = tags.replace(' ', ', ')
             # Escribir la fila en el archivo CSV
-            writer.writerow([id, image, tags, width, height, character, path])
+            writer.writerow([id, image, tags, width, height, character])
     # Cerrar el archivo
     f.close()
 
-def descargar(url, character, folder):
+def descargar(url, character):
     # Definir los parámetros de búsqueda
     limit = 100    # el número máximo de resultados por página
     pages = 50    # calcular el número total de páginas a descargar
@@ -76,7 +75,7 @@ def descargar(url, character, folder):
             try:
                 response = requests.get(image_url, stream=True)
                 response.raise_for_status()  # Verificar si hubo errores en la respuesta HTTP
-                with open(f'{folder}/{item["image"]}', 'wb') as f:
+                with open(f'{item["image"]}', 'wb') as f:
                     response.raw.decode_content = True
                     shutil.copyfileobj(response.raw, f)
             except requests.exceptions.RequestException as e:
@@ -93,11 +92,11 @@ def descargar(url, character, folder):
             #print(f'Etiquetas: {tagsP}')
             #print(f'URL: {image_url}\n')
             # Imprimir la información de la imagen
-            print(f'Character\t{character}\t\t\t\tImagen\t{image_count}:')
+            print(f'Character\t{character}\tImagen\t{image_count}:')
             #print(f'URL: {image_url}\n')
             image_count += 1
             # Agregar los datos al archivo CSV
-            JSON2SCV(data, character, folder)
+            JSON2SCV(data, character)
 
 
 def RedNeuronal(csv_file):
@@ -238,8 +237,8 @@ def randomize_csv():
 
 
 
-def descargar_wrapper(url, images, character, folder):
-    descargar(url, images, character, folder)
+def descargar_wrapper(url, character):
+    descargar(url, character)
 
 def main():
 
@@ -257,13 +256,16 @@ def main():
         'Houraisan Kaguya': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=houraisan_kaguya+1girl+touhou',
         'Rumia': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=rumia+1girl+touhou'
     }
-
     # Crear una carpeta para cada personaje y descargar las imágenes
-    for character, url in characters.items():
-        print(f'Downloading images of {character}...')
-        character_folder = character.replace(' ', '_')
-        os.makedirs(character_folder, exist_ok=True)
-        descargar(url, character, character_folder)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        for character, url in characters.items():
+            print(f'Downloading images of {character}...')
+            future = executor.submit(descargar_wrapper, url, character)
+            futures.append(future)
+
+        # Esperar a que todas las tareas de descarga se completen
+        concurrent.futures.wait(futures)
     model = RedNeuronal("archivo.csv")
     model.save(f'Touhou_model.h5')
     
