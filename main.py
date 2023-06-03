@@ -82,7 +82,7 @@ def descargar(url, images, character, folder):
             
             # Imprimir la información de la imagen
             print(f'Imagen {image_count}:')
-            print(f'URL: {image_url}\n')
+            #print(f'URL: {image_url}\n')
             
             # Agregar los datos al archivo CSV
             JSON2SCV(data, character, folder)
@@ -91,7 +91,7 @@ def descargar(url, images, character, folder):
 def RedNeuronal(csv_file):
     # Cargar el archivo CSV
     df = pd.read_csv(csv_file)
-    image_paths = df['Path'].tolist()
+    image_paths = df['path'].tolist()
 
     # Dividir el conjunto de datos en entrenamiento, prueba y validación
     train_ratio = 0.6
