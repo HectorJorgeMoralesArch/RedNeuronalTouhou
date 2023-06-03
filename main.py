@@ -74,7 +74,7 @@ def descargar(url, character, folder):
             #tagsP = item['tags']# las etiquetas de la imagen
             # Descargar la imagen
             response = requests.get(image_url, stream=True)
-            with open(f'{item["image"]}', 'wb') as f:
+            with open(f'{folder}/{item["image"]}', 'wb') as f:
                 response.raw.decode_content = True
                 shutil.copyfileobj(response.raw, f)
             # Imprimir la información de la imagen
