@@ -249,18 +249,14 @@ def main():
     }
 
     # Crear una carpeta para cada personaje y descargar las imágenes
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        futures = []
-        for character in characters:
-            print(f'Downloading images of {character}...')
-            character_folder = character.lower().replace(' ', '_')
-            os.makedirs(character_folder, exist_ok=True)
-            future = executor.submit(descargar_wrapper, characters[character], image_count, character, character_folder)
-            futures.append(future)
-
-        # Esperar a que todas las tareas se completen
-        concurrent.futures.wait(futures)
-
+    for character, url in characters.items():
+        print(f'Downloading images of {character}...')
+        character_folder = character.lower().replace(' ', '_')
+        os.makedirs(character_folder, exist_ok=True)
+        descargar(url, image_count, character, character_folder)
+    model = RedNeuronal("archivo.csv")
+    model.save(f'Touhou_model.h5')
+    
 if __name__ == '__main__':
     main()
 
