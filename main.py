@@ -257,7 +257,7 @@ def main():
         os.makedirs(character_folder, exist_ok=True)
         descargar(url, image_count, character, character_folder)
 
-    randomize_csv()
+    randomize_csv() 
 
 if __name__ == '__main__':
     main()
