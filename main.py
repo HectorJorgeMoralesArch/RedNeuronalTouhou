@@ -76,7 +76,7 @@ def descargar(url, character, folder):
             try:
                 response = requests.get(image_url, stream=True)
                 response.raise_for_status()  # Verificar si hubo errores en la respuesta HTTP
-                with open(f'{folder}_{image_count}_{item["image"]}', 'wb') as f:
+                with open(f'{folder}/{item["image"]}', 'wb') as f:
                     response.raw.decode_content = True
                     shutil.copyfileobj(response.raw, f)
             except requests.exceptions.RequestException as e:
