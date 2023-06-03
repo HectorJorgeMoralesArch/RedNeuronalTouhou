@@ -18,7 +18,7 @@ def JSON2SCV(data, Character, folder):
             writer = csv.writer(f)
             # Escribir los encabezados
             writer.writerow(['id', 'image', 'tags', 'width', 'height', 'character', 'path'])
-    Path=folder+"/"+Character
+    
     with open(filename, 'a', newline='') as f:
         writer = csv.writer(f)
         for item in data:
@@ -29,7 +29,7 @@ def JSON2SCV(data, Character, folder):
             width = item['width']
             height = item['height']
             character = Character
-            path = Path
+            path = folder + "/"+image
             
             # Reemplazar los espacios en blanco en la cadena de tags con comas
             tags = tags.replace(' ', ', ')
