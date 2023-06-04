@@ -5,15 +5,15 @@ import csv
 import os
 import pandas as pd
 
-def JSON2SCV(data, character):
+def JSON2SCV(data, character, ID):
     # Definir la ruta y nombre de archivo
-    filename = 'archivo.csv'
+    filename = f'{character}.csv'
     # Comprobar si el archivo CSV ya existe
     if not os.path.isfile(filename):
         with open(filename, 'w', newline='') as f:
             writer = csv.writer(f)
             # Escribir los encabezados
-            writer.writerow(['image', 'width', 'height', 'character'])
+            writer.writerow(['id','image', 'width', 'height', 'character'])
 
     with open(filename, 'a', newline='') as f:
         writer = csv.writer(f)
@@ -28,7 +28,7 @@ def JSON2SCV(data, character):
             # Reemplazar los espacios en blanco en la cadena de tags con comas
             #tags = tags.replace(' ', ', ')
             # Escribir la fila en el archivo CSV
-            writer.writerow([image, width, height, character])
+            writer.writerow([ID, image, width, height, character])
     # Cerrar el archivo
     f.close()
 def descargar(url, character):
@@ -49,10 +49,10 @@ def descargar(url, character):
             image_extension = os.path.splitext(item["image"])[1].lower()
 
             # Verificar si la extensión es válida (.jpg o .png)
-            if image_extension not in ['.jpg', '.png']:
-                continue
-            if item['sample']:
-                continue
+            #if image_extension not in ['.jpg', '.png']:
+            #    continue
+            #if item['sample']:
+            #    continue
             # Guardar la respuesta JSON en un archivo
             #with open(f'{character}_{image_count}.json', 'w') as f:
             #    json.dump(item, f)
@@ -68,20 +68,20 @@ def descargar(url, character):
                 with open(f'{item["image"]}', 'wb') as f:
                     response.raw.decode_content = True
                     shutil.copyfileobj(response.raw, f)
+                # Imprimir la información de la imagen
+                print(f'Imagen {image_count}:')
+                #print(f'Artista: {owner}')
+                #print(f'Etiquetas: {tagsP}')
+                #print(f'URL: {image_url}\n')
+                JSON2SCV(data, character, image_count)# Incrementar el contador de imagen
+                image_count += 1
             except requests.exceptions.RequestException as e:
                 print(f"Error al realizar la solicitud: {e}")
                 continue
             except IOError as e:
                 print(f"Error al guardar la imagen: {e}")
                 continue
-            # Imprimir la información de la imagen
-            print(f'Imagen {image_count}:')
-            #print(f'Artista: {owner}')
-            #print(f'Etiquetas: {tagsP}')
-            #print(f'URL: {image_url}\n')
-            JSON2SCV(data, character)# Incrementar el contador de imagen
-            image_count += 1
-            
+             
 def RedNeuronal():
     # Cargar el archivo CSV
     df = pd.read_csv("archivo.csv")
@@ -215,5 +215,5 @@ def main():
     }
     descargar('https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=kirisame_marisa+1girl+touhou&limit={limit}&pid={pages}&json=1',"Kirisame Marisa")
 
-if _name_ == '_main_':
+if __name__ == '__main__':
     main()
