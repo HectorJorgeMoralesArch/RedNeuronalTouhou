@@ -9,7 +9,7 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix, classification_report
 
-def JSON2CSV(ID, data, character, folder):
+def JSON2SCV(data, character):
     # Definir la ruta y nombre de archivo
     filename = 'archivo.csv'
     # Comprobar si el archivo CSV ya existe
@@ -17,7 +17,7 @@ def JSON2CSV(ID, data, character, folder):
         with open(filename, 'w', newline='') as f:
             writer = csv.writer(f)
             # Escribir los encabezados
-            writer.writerow(['ID', 'image id', 'image', 'tags', 'width', 'height', 'character', 'path'])
+            writer.writerow(['ID', 'image id', 'image', 'width', 'height', 'character', 'path'])
     
     with open(filename, 'a', newline='') as f:
         writer = csv.writer(f)
@@ -25,78 +25,64 @@ def JSON2CSV(ID, data, character, folder):
             # Obtener los valores de cada campo
             image_id = item['id']
             image = item['image']
-            tags = item['tags']
+            #tags = item['tags']
             width = item['width']
             height = item['height']
-            character = character
-            path = folder + "/" + image
             
             # Reemplazar los espacios en blanco en la cadena de tags con comas
-            tags = tags.replace(' ', ', ')
+            #tags = tags.replace(' ', ', ')
             # Escribir la fila en el archivo CSV
-            writer.writerow([ID, image_id, image, tags, width, height, character, path])
+            writer.writerow([image_id, image, width, height, character])
     # Cerrar el archivo
     f.close()
 
-def download_image(url, image_path):
-    try:
-        response = requests.get(url, stream=True)
-        response.raise_for_status()  # Verificar si hubo errores en la respuesta HTTP
-        with open(image_path, 'wb') as f:
-            response.raw.decode_content = True
-            shutil.copyfileobj(response.raw, f)
-    except requests.exceptions.RequestException as e:
-        print(f"Error al realizar la solicitud: {e}")
-    except IOError as e:
-        print(f"Error al guardar la imagen: {e}")
+def descargar(url, character):
 
-def download_images(tags, character, folder):
-    # Definir los parámetros de búsqueda
-    limit = 100    # el número máximo de resultados por página
-    pages = 50    # calcular el número total de páginas a descargar
-    image_count = 1   # Inicializar el contador de imagen
-
-    
-    # Definir la URL base de la API de Safebooru
-    url = 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags='+tags
+    # Inicializar el contador de imagen
+    image_count = 1
     # Iterar a través de las páginas y descargar las imágenes
-    while image_count < 5000:
+    while image_count<5000:
         # Realizar la solicitud a la API de Safebooru para la página actual
-        response = requests.get(f'{url}&limit={limit}&pid={pages}&json=1')
-
-        # Analizar la respuesta JSON
+        response = requests.get(url)
         data = json.loads(response.content)
-
-        # Descargar cada imagen en la página actual utilizando la programación concurrente
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future_to_image = {
-                executor.submit(
-                    download_image,
-                    f'https://safebooru.org//images/{item["directory"]}/{item["image"]}?{item["id"]}',
-                    f'{item["image"]}'
-                ): item
-                for item in data
-            }
-
-            for future in concurrent.futures.as_completed(future_to_image):
-                item = future_to_image[future]
-                try:
-                    future.result()
-                    image_count += 1
-                    print(f"{character}\t{image_count}")
-                except Exception as e:
-                    print(f'Error al descargar la imagen {item["id"]}: {e}')
-
-        # Convertir el JSON a CSV
-        ID=f"{character}{image_count}"
-        JSON2CSV(ID, data, character, character_folder)
-
-        # Decrementar el número de páginas para obtener la siguiente página en la siguiente iteración
-        pages -= 1
-
-        # Retraso aleatorio antes de realizar la siguiente solicitud
-        time.sleep(random.randint(1, 3))
-
+        # Descargar cada imagen en la página actual
+        for item in data:
+            # Obtener la extensión del archivo de imagen
+            image_extension = os.path.splitext(item["image"])[1].lower()
+            
+            # Verificar si la extensión es válida (.jpg o .png)
+            if image_extension not in ['.jpg', '.png']:
+                continue
+            if item['sample']:
+                continue
+            # Guardar la respuesta JSON en un archivo
+            #with open(f'{character}_{image_count}.json', 'w') as f:
+            #    json.dump(item, f)
+            # Obtener la información de la imagen
+            id=item['id']
+            image_url = f'https://safebooru.org//images/{item["directory"]}/{item["image"]}?{item["id"]}'
+            #owner = item['owner'] # el nombre del artista
+            #tagsP = item['tags']# las etiquetas de la imagen
+            # Descargar la imagen
+            try:
+                response = requests.get(image_url, stream=True)
+                response.raise_for_status()  # Verificar si hubo errores en la respuesta HTTP
+                with open(f'{item["image"]}', 'wb') as f:
+                    response.raw.decode_content = True
+                    shutil.copyfileobj(response.raw, f)
+            except requests.exceptions.RequestException as e:
+                print(f"Error al realizar la solicitud: {e}")
+                continue
+            except IOError as e:
+                print(f"Error al guardar la imagen: {e}")
+                continue
+            # Imprimir la información de la imagen
+            print(f'Imagen {image_count}:')
+            #print(f'Artista: {owner}')
+            #print(f'Etiquetas: {tagsP}')
+            #print(f'URL: {image_url}\n')
+            JSON2SCV(data, character)# Incrementar el contador de imagen
+            image_count += 1
 def RedNeuronal(csv_file):
     # Cargar el archivo CSV
     df = pd.read_csv(csv_file)
@@ -209,42 +195,26 @@ def RedNeuronal(csv_file):
     # Retornar el modelo entrenado
     return model
 def main():
+
+    # Definir los parámetros de búsqueda
+    limit = 100
+    pages = 100
     # Definir los personajes y las carpetas de destino
     characters = {
-    'Hakurei Reimu': 'hakurei_reimu+1girl+touhou',
-    'Kirisame Marisa': 'kirisame_marisa+1girl+touhou',
-    'Cirno': 'cirno+1girl+touhou',
-    'Komeiji Koishi': 'komeiji_koishi+1girl+touhou',
-    'Komeiji Satori': 'komeiji_satori+1girl+touhou',
-    'Yakumo Yukari': 'yakumo_yukari+1girl+touhou',
-    'Shameimaru Aya': 'shameimaru_aya+1girl+touhou',
-    'Fujiwara No Mokou': 'fujiwara_no_mokou+1girl+touhou',
-    'Houraisan Kaguya': 'houraisan_kaguya+1girl+touhou',
-    'Rumia': 'rumia+1girl+touhou'
+    'Hakurei Reimu': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=hakurei_reimu+1girl+touhou&limit={limit}&pid={pages}&json=1',
+    'Kirisame Marisa': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=kirisame_marisa+1girl+touhou&limit={limit}&pid={pages}&json=1',
+    'Cirno': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=cirno+1girl+touhou&limit={limit}&pid={pages}&json=1',
+    'Komeiji Koishi': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=komeiji_koishi+1girl+touhou&limit={limit}&pid={pages}&json=1',
+    'Komeiji Satori': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=komeiji_satori+1girl+touhou&limit={limit}&pid={pages}&json=1',
+    'Yakumo Yukari': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=yakumo_yukari+1girl+touhou&limit={limit}&pid={pages}&json=1',
+    'Shameimaru Aya': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=shameimaru_aya+1girl+touhou&limit={limit}&pid={pages}&json=1',
+    'Fujiwara No Mokou': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=fujiwara_no_mokou+1girl+touhou&limit={limit}&pid={pages}&json=1',
+    'Houraisan Kaguya': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=houraisan_kaguya+1girl+touhou&limit={limit}&pid={pages}&json=1',
+    'Rumia': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=rumia+1girl+touhou&limit={limit}&pid={pages}&json=1'
     }
     for character, url in characters.items():
-        character_folder = character.replace(' ', '_')
-        os.makedirs(character_folder, exist_ok=True)
-    # Descargar las imágenes para cada personaje
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future_to_character = {
-            executor.submit(
-                download_images,
-                f'{tags}',
-                character,
-                f'{character.replace(" ", "_")}'
-            ): (character, character.replace(" ", "_"))
-            for character, tags in characters.items()
-        }
-
-        for future in concurrent.futures.as_completed(future_to_character):
-            character, folder = future_to_character[future]
-            try:
-                future.result()
-                print(f"Descarga de imágenes para {character} completada.")
-            except Exception as e:
-                print(f"Error al descargar imágenes para {character}: {e}")
-
+        descargar(url, character)
+        print(f"Descarga de imágenes para {character} completada.")
     print("Todas las descargas de imágenes han sido completadas.")
     model = RedNeuronal("archivo.csv")
     model.save(f'Touhou_model.h5')
