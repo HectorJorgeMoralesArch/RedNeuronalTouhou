@@ -1,13 +1,9 @@
 import requests
-import os
+import shutil
 import json
 import csv
-import random
-import shutil
-import concurrent.futures
-import tensorflow as tf
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from sklearn.metrics import confusion_matrix, classification_report
+import os
+import pandas as pd
 
 def JSON2SCV(data, character):
     # Definir la ruta y nombre de archivo
@@ -35,8 +31,11 @@ def JSON2SCV(data, character):
             writer.writerow([image, width, height, character])
     # Cerrar el archivo
     f.close()
-
 def descargar(url, character):
+    # Definir los parámetros de búsqueda
+    limit = 100
+    pages = 100
+
     # Inicializar el contador de imagen
     image_count = 1
     # Iterar a través de las páginas y descargar las imágenes
@@ -76,16 +75,13 @@ def descargar(url, character):
                 print(f"Error al guardar la imagen: {e}")
                 continue
             # Imprimir la información de la imagen
-            #print(f'Imagen {image_count}:')
+            print(f'Imagen {image_count}:')
             #print(f'Artista: {owner}')
             #print(f'Etiquetas: {tagsP}')
             #print(f'URL: {image_url}\n')
             JSON2SCV(data, character)# Incrementar el contador de imagen
             image_count += 1
-
-
-
-
+            
 def RedNeuronal():
     # Cargar el archivo CSV
     df = pd.read_csv("archivo.csv")
@@ -217,18 +213,7 @@ def main():
         'Houraisan Kaguya': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=houraisan_kaguya+1girl+touhou&limit={limit}&pid={pages}&json=1',
         'Rumia': 'https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=rumia+1girl+touhou&limit={limit}&pid={pages}&json=1'
     }
+    descargar('https://safebooru.org/index.php?page=dapi&s=post&q=index&tags=cirno+1girl+touhou&limit={limit}&pid={pages}&json=1',"Cirno")
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = []
-        for character, url in characters.items():
-            futures.append(executor.submit(descargar, url, character))
-
-        # Esperar a que todas las descargas se completen
-        concurrent.futures.wait(futures)
-
-    print("Todas las descargas de imágenes han sido completadas.")
-    model = RedNeuronal()
-    model.save(f'Touhou_model.h5')
-
-if __name__ == '__main__':
+if _name_ == '_main_':
     main()
